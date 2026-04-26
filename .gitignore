@@ -8,6 +8,7 @@ terraform.tfvars
 
 # Environment
 .env
+**/.env
 
 # Python
 __pycache__/

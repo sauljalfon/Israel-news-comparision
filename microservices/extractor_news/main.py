@@ -1,16 +1,21 @@
 from fastapi import FastAPI
 from azure.storage.blob import BlobServiceClient
+from dotenv import load_dotenv
 
 import feedparser
 import requests
 import trafilatura
 import json
 import logging
+import os
 
 from models import ExtractRequest, ExtractResponse
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
+load_dotenv()
+
+STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
 
 @app.get("/")
@@ -26,18 +31,16 @@ def health():
 @app.post("/extract", response_model=ExtractResponse)
 def extract(req: ExtractRequest) -> ExtractResponse:
     all_articles = []
-    blob_path = f"raw/{req.run_date}/articles.ndjson"
     for feed in RSS_FEEDS:
         articles = fetch_rss(feed)
         for article in articles:
             article["full_text"] = fetch_full_text(article["url"])
             all_articles.append(article)
-    upload_to_blob(req.storage_connection_string, all_articles, blob_path)
+    upload_to_blob(str(STORAGE_CONNECTION_STRING), all_articles, req.raw_path)
 
     return ExtractResponse(
-        run_date=req.run_date,
+        raw_path=req.raw_path,
         total_articles=len(all_articles),
-        blob_path=blob_path,
     )
 
 
