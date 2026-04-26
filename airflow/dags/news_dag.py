@@ -28,40 +28,50 @@ with DAG(
     extract_news = HttpOperator(
         task_id="extract_news",
         http_conn_id="aci_extractor_news",
-        endpoint="/health",
-        method="GET",
+        endpoint="/extract",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"raw_path": "{{ ds }}/articles.ndjson"}',
         response_check=lambda response: response.status_code == 200,
     )
 
     extract_market = HttpOperator(
         task_id="extract_market",
         http_conn_id="aci_extractor_market",
-        endpoint="/health",
-        method="GET",
+        endpoint="/extract",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"raw_path": "{{ ds }}/tase.ndjson", "date": "{{ ds }}"}',
         response_check=lambda response: response.status_code == 200,
     )
 
     enrich = HttpOperator(
         task_id="enrich",
         http_conn_id="aci_enrich",
-        endpoint="/health",
-        method="GET",
+        endpoint="/enrich",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"raw_path": "{{ ds }}/articles.ndjson", "enriched_path": "{{ ds }}/articles.parquet"}',
         response_check=lambda response: response.status_code == 200,
     )
 
     transform = HttpOperator(
         task_id="transform",
         http_conn_id="aci_transform",
-        endpoint="/health",
-        method="GET",
+        endpoint="/transform",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"enriched_path": "{{ ds }}/articles.parquet", "tase_path": "{{ ds }}/tase.ndjson", "processed_path": "{{ ds }}/articles.parquet"}',
         response_check=lambda response: response.status_code == 200,
     )
 
     synthesis = HttpOperator(
         task_id="synthesis",
         http_conn_id="aci_synthesis",
-        endpoint="/health",
-        method="GET",
+        endpoint="/synthesize",
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data='{"processed_path": "{{ ds }}/articles.parquet", "report_path": "{{ ds }}/report.json"}',
         response_check=lambda response: response.status_code == 200,
     )
 
